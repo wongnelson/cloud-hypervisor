@@ -12,7 +12,7 @@
 //
 
 use std::collections::{BTreeMap, HashMap};
-use std::fs::{File, OpenOptions};
+use std::fs::{self, File, OpenOptions};
 use std::io::{self, Seek, SeekFrom, Write};
 #[cfg(all(target_arch = "x86_64", feature = "guest_debug"))]
 use std::mem::size_of;
@@ -108,6 +108,9 @@ pub enum Error {
 
     #[error("Cannot open initramfs file")]
     InitramfsFile(#[source] io::Error),
+
+    #[error("Cannot open OEM string file")]
+    OemStringFile(#[source] io::Error),
 
     #[error("Cannot load the kernel into memory")]
     KernelLoad(#[source] linux_loader::loader::Error),
@@ -1353,7 +1356,27 @@ impl Vm {
             .as_ref()
             .and_then(|p| p.oem_strings.clone());
 
-        let oem_strings = oem_strings
+        let oem_string_paths = self
+            .config
+            .lock()
+            .unwrap()
+            .platform
+            .as_ref()
+            .and_then(|p| p.oem_string_paths.clone());
+
+        let mut oem_strings_combined: Option<Vec<String>> = oem_strings;
+        if let Some(paths) = oem_string_paths {
+            let mut list = oem_strings_combined.unwrap_or_default();
+            for path in paths {
+                // TODO: enforce restrictive permissions (e.g. 0600) on the
+                // secret file to avoid unintended leaks.
+                let s = fs::read_to_string(&path).map_err(Error::OemStringFile)?;
+                list.push(s);
+            }
+            oem_strings_combined = Some(list);
+        }
+
+        let oem_strings = oem_strings_combined
             .as_deref()
             .map(|strings| strings.iter().map(|s| s.as_ref()).collect::<Vec<&str>>());
 
