@@ -683,7 +683,8 @@ impl PlatformConfig {
             .add("iommu_address_width")
             .add("serial_number")
             .add("uuid")
-            .add("oem_strings");
+            .add("oem_strings")
+            .add("oem_string_paths");
         #[cfg(feature = "tdx")]
         parser.add("tdx");
         #[cfg(feature = "sev_snp")]
@@ -710,6 +711,10 @@ impl PlatformConfig {
             .convert::<StringList>("oem_strings")
             .map_err(Error::ParsePlatform)?
             .map(|v| v.0);
+        let oem_string_paths = parser
+            .convert::<StringList>("oem_string_paths")
+            .map_err(Error::ParsePlatform)?
+            .map(|v| v.0.iter().map(PathBuf::from).collect());
         #[cfg(feature = "tdx")]
         let tdx = parser
             .convert::<Toggle>("tdx")
@@ -729,6 +734,7 @@ impl PlatformConfig {
             serial_number,
             uuid,
             oem_strings,
+            oem_string_paths,
             #[cfg(feature = "tdx")]
             tdx,
             #[cfg(feature = "sev_snp")]
@@ -3888,6 +3894,7 @@ mod tests {
             serial_number: None,
             uuid: None,
             oem_strings: None,
+            oem_string_paths: None,
             #[cfg(feature = "tdx")]
             tdx: false,
             #[cfg(feature = "sev_snp")]

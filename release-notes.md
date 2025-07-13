@@ -399,6 +399,12 @@ different errors, say retrying the request when applicable. (#7043)
 It is now possible to specify an IPv6 address and mask when creating a
 network interface with `--net`. (#7048)
 
+### SMBIOS OEM Strings from Files
+
+SMBIOS OEM strings can now be loaded from file paths through `--platform`
+with the `oem_string_paths` option. This avoids leaking secrets via the
+process list or log files. (#6951)
+
 ### Experimental AArch64 Support with the MSHV Hypervisor
 
 It is now possible to start VMs on AArch64 platforms when using MSHV
